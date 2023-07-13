@@ -46,7 +46,7 @@ func TestWeatherErrorResponse(t *testing.T) {
 	defer server.Close()
 	BaseUrl = server.URL
 
-	_, err = client.Weather(context.TODO(), "", WeatherRequest{})
+	_, err = client.Weather(context.TODO(), WeatherRequest{})
 	if err == nil {
 		t.Errorf("expected request to error")
 		return
@@ -77,7 +77,7 @@ func TestWeatherAlertErrorResponse(t *testing.T) {
 	defer server.Close()
 	BaseUrl = server.URL
 
-	_, err = client.Alert(context.TODO(), "", WeatherAlertRequest{})
+	_, err = client.Alert(context.TODO(), WeatherAlertRequest{})
 	if err == nil {
 		t.Errorf("expected request to error")
 		return
@@ -108,7 +108,7 @@ func weather(t *testing.T, filename string) {
 	defer server.Close()
 	BaseUrl = server.URL
 
-	response, err := client.Weather(context.TODO(), "", WeatherRequest{})
+	response, err := client.Weather(context.TODO(), WeatherRequest{})
 	if err != nil {
 		t.Error(err.Error())
 	}
@@ -132,7 +132,7 @@ func availability(t *testing.T, filename string) {
 	defer server.Close()
 	BaseUrl = server.URL
 
-	response, err := client.Availability(context.TODO(), "", AvailabilityRequest{})
+	response, err := client.Availability(context.TODO(), AvailabilityRequest{})
 	if err != nil {
 		t.Error(err.Error())
 	}

@@ -4,6 +4,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -14,37 +15,58 @@ const DefaultUserAgent = "nicknassar-weatherkit"
 
 // Client is a WeatherKit API client.
 type Client struct {
-	HttpClient *http.Client
+	HttpClient  *http.Client
+	Credentials *credentials
 
 	// The UserAgent header value to send along with requests.
 	UserAgent string
 }
 
+func NewClient(keyId, teamId, serviceId, privateKey string) (*Client, error) {
+	if creds, err := newCredentials(keyId, teamId, serviceId, privateKey); err != nil {
+		return nil, err
+	} else {
+		return &Client{
+			HttpClient:  &http.Client{},
+			Credentials: creds,
+		}, nil
+	}
+}
+
 // Weather obtains weather data for the specified location.
-// The token parameter is a JWT developer token.
-func (d *Client) Weather(ctx context.Context, token string, request WeatherRequest) (*WeatherResponse, error) {
+func (d *Client) Weather(ctx context.Context, request WeatherRequest) (*WeatherResponse, error) {
 	response := WeatherResponse{}
-	err := d.get(ctx, token, request, &response)
+	err := d.get(ctx, request, &response)
 	return &response, err
 }
 
 // Availability determines the data sets available for the specified location.
 // The token parameter is a JWT developer token.
-func (d *Client) Availability(ctx context.Context, token string, request AvailabilityRequest) (*AvailabilityResponse, error) {
+func (d *Client) Availability(ctx context.Context, request AvailabilityRequest) (*AvailabilityResponse, error) {
 	response := AvailabilityResponse{}
-	err := d.get(ctx, token, request, &response)
+	err := d.get(ctx, request, &response)
 	return &response, err
 }
 
 // Alert receives information on an active weather alert.
 // The token parameter is a JWT developer token.
-func (d *Client) Alert(ctx context.Context, token string, request WeatherAlertRequest) (*WeatherAlertResponse, error) {
+func (d *Client) Alert(ctx context.Context, request WeatherAlertRequest) (*WeatherAlertResponse, error) {
 	response := WeatherAlertResponse{}
-	err := d.get(ctx, token, request, &response)
+	err := d.get(ctx, request, &response)
 	return &response, err
 }
 
-func (d *Client) get(ctx context.Context, token string, request urlBuilder, output interface{}) error {
+func (d *Client) token() (string, error) {
+	if d.Credentials == nil {
+		return "", nil
+	} else if token, err := d.Credentials.Token(); err != nil {
+		return "", err
+	} else {
+		return token, nil
+	}
+}
+
+func (d *Client) get(ctx context.Context, request urlBuilder, output interface{}) error {
 	if d.HttpClient == nil {
 		d.HttpClient = &http.Client{}
 	}
@@ -57,7 +79,13 @@ func (d *Client) get(ctx context.Context, token string, request urlBuilder, outp
 	req.Header.Add("User-Agent", d.userAgent())
 	req.Header.Add("Accept", "application/json; charset=utf-8")
 	req.Header.Add("Accept-Encoding", "gzip")
-	req.Header.Add("Authorization", "Bearer "+token)
+
+	// get the auth token and add it to the headers if present
+	if token, err := d.token(); err != nil {
+		return fmt.Errorf("weatherkit failed to get token: %w", err)
+	} else if len(token) > 0 {
+		req.Header.Add("Authorization", "Bearer "+token)
+	}
 
 	response, err := d.HttpClient.Do(req)
 	if err != nil {
