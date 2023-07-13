@@ -3,15 +3,24 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/nicknassar/weatherkit"
 )
 
 // print hour 0 temp in new york
 func main() {
-	client := weatherkit.Client{}
+	client, err := weatherkit.NewClient(
+		os.Getenv("WEATHER_KIT_KID"),
+		os.Getenv("WEATHER_KIT_ISS"),
+		os.Getenv("WEATHER_KIT_SUB"),
+		os.Getenv("WEATHER_KIT_PRIVATE_KEY"))
 
-	token := "my token"
+	if err != nil {
+		fmt.Println("error", err.Error())
+		return
+	}
+
 	ctx := context.Background()
 
 	request := weatherkit.WeatherRequest{
@@ -23,7 +32,7 @@ func main() {
 		},
 	}
 
-	weather, err := client.Weather(ctx, token, request)
+	weather, err := client.Weather(ctx, request)
 	if err != nil {
 		fmt.Println("error", err.Error())
 		return

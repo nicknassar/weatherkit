@@ -3,18 +3,27 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/nicknassar/weatherkit"
 )
 
 // print data set availability in new york
 func main() {
-	client := weatherkit.Client{}
+	client, err := weatherkit.NewClient(
+		os.Getenv("WEATHER_KIT_KID"),
+		os.Getenv("WEATHER_KIT_ISS"),
+		os.Getenv("WEATHER_KIT_SUB"),
+		os.Getenv("WEATHER_KIT_PRIVATE_KEY"))
 
-	token := "my token"
+	if err != nil {
+		fmt.Println("error", err.Error())
+		return
+	}
+
 	ctx := context.Background()
 
-	availability, err := client.Availability(ctx, token, weatherkit.AvailabilityRequest{
+	availability, err := client.Availability(ctx, weatherkit.AvailabilityRequest{
 		Latitude:  38.960,
 		Longitude: -104.506,
 	})
